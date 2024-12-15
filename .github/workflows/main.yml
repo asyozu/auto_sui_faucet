@@ -33,7 +33,8 @@ jobs:
         run: |
           copy dist/main.exe . 
           Compress-Archive -Path .\main.exe, .\config.json -DestinationPath windows.zip
-          echo "TAG_NAME=$(date +%d.%m.%Y)" >> $GITHUB_ENV
+      - shell: bash
+        run: echo "TAG_NAME=$(date +%d.%m.%Y)" >> $GITHUB_ENV
 
       - name: Upload ZIP to Release
         uses: softprops/action-gh-release@v1
