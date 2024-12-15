@@ -31,7 +31,7 @@ def request_sui(config):
 def process_response(response):
     if response.status_code == 429:
         print(f"Rate limit exceeded. Status code: {response.status_code}")
-    elif response.status_code == 200:
+    elif response.status_code == 202:
         try:
             response_json = response.json()
             task_id = response_json.get('task')
