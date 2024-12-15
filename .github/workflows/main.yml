@@ -1,0 +1,46 @@
+name: Build EXE
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'main.py'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'main.py'
+permissions: write-all
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Build executable
+        run: |
+          pip install pyinstaller
+          pip install -r requirements.txt
+          pyinstaller --onefile main.py
+
+      - name: Create ZIP with EXE and config.json
+        run: |
+          copy dist/main.exe . 
+          Compress-Archive -Path .\main.exe, .\config.json -DestinationPath windows.zip
+          echo "TAG_NAME=$(date +%d.%m.%Y)" >> $GITHUB_ENV
+
+      - name: Upload ZIP to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          files: windows.zip
+          tag_name: ${{ env.TAG_NAME }}
+          name: ${{ env.TAG_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
