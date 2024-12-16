@@ -1,17 +1,26 @@
 import requests
 import json
 import time
+import logging
+import sys
 
 def load_config(filename='config.json'):
     try:
         with open(filename, 'r') as config_file:
-            return json.load(config_file)
+            config = json.load(config_file)
+            required_keys = ["faucet", "recipient_address", "sleep_time"]
+            if not all(key in config for key in required_keys):
+                raise ValueError(f"Missing required keys in config file: {', '.join(required_keys)}")
+            return config
     except FileNotFoundError:
-        print(f"Configuration file '{filename}' not found.")
-        raise
+        logging.error(f"Configuration file '{filename}' not found.")
+        sys.exit(1)
     except json.JSONDecodeError:
-        print(f"Error parsing the configuration file '{filename}'.")
-        raise
+        logging.error(f"Error parsing the configuration file '{filename}'. Ensure it's valid JSON.")
+        sys.exit(1)
+    except ValueError as e:
+        logging.error(e)
+        sys.exit(1)
 
 def request_sui(config):
     url = f'https://faucet.{config["faucet"]}.sui.io/v1/gas'
@@ -25,39 +34,40 @@ def request_sui(config):
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         return response
     except requests.exceptions.RequestException as e:
-        print(f"Error during request: {e}")
+        logging.error(f"Error during request: {e}")
         return None
 
 def process_response(response):
     if response.status_code == 429:
-        print(f"Rate limit exceeded. Status code: {response.status_code}")
+        logging.warning("Rate limit exceeded. Please try again later.")
     elif response.status_code == 202:
         try:
             response_json = response.json()
             task_id = response_json.get('task')
-            print(f"SUI request successful! Task ID: {task_id}")
+            logging.info(f"SUI request successful! Task ID: {task_id}")
         except json.JSONDecodeError:
-            print("Failed to parse JSON response.")
+            logging.error("Failed to parse JSON response.")
     else:
-        print(f"Failed to request SUI. Status code: {response.status_code}")
+        logging.error(f"Failed to request SUI. Status code: {response.status_code}, Response: {response.text}")
 
 def main():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     config = load_config()
-    
-    if "faucet" not in config or "recipient_address" not in config or "sleep_time" not in config:
-        print("Missing necessary configuration values. Exiting...")
-        return
 
-    while True:
-        response = request_sui(config)
-        
-        if response:
-            process_response(response)
-        
-        for remaining in range(int(config['sleep_time']), 0, -1):
-            print(f"Time remaining: {remaining} seconds", end="\r")
-            time.sleep(1)
-        print("")
+    try:
+        while True:
+            response = request_sui(config)
+            if response:
+                process_response(response)
+
+            sleep_time = int(config['sleep_time'])
+            for remaining in range(sleep_time, 0, -1):
+                print(f"Next request in {remaining}", end="\r")
+                time.sleep(1)
+            print("")
+    except KeyboardInterrupt:
+        logging.info("\nProcess interrupted by user. Exiting gracefully.")
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
