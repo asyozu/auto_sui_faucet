@@ -1,7 +1,6 @@
 import requests
 import json
 import time
-import logging
 import sys
 
 def load_config(filename='config.json'):
@@ -13,13 +12,13 @@ def load_config(filename='config.json'):
                 raise ValueError(f"Missing required keys in config file: {', '.join(required_keys)}")
             return config
     except FileNotFoundError:
-        logging.error(f"Configuration file '{filename}' not found.")
+        print(f"Configuration file '{filename}' not found.")
         sys.exit(1)
     except json.JSONDecodeError:
-        logging.error(f"Error parsing the configuration file '{filename}'. Ensure it's valid JSON.")
+        print(f"Error parsing the configuration file '{filename}'. Ensure it's valid JSON.")
         sys.exit(1)
     except ValueError as e:
-        logging.error(e)
+        print(e)
         sys.exit(1)
 
 def request_sui(config):
@@ -34,24 +33,23 @@ def request_sui(config):
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         return response
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error during request: {e}")
+        print(f"Error during request: {e}")
         return None
 
 def process_response(response):
     if response.status_code == 429:
-        logging.warning("Rate limit exceeded. Please try again later.")
+        print("Rate limit exceeded. Please try again later.")
     elif response.status_code == 202:
         try:
             response_json = response.json()
             task_id = response_json.get('task')
-            logging.info(f"SUI request successful! Task ID: {task_id}")
+            print(f"SUI request successful! Task ID: {task_id}")
         except json.JSONDecodeError:
-            logging.error("Failed to parse JSON response.")
+            print("Failed to parse JSON response.")
     else:
-        logging.error(f"Failed to request SUI. Status code: {response.status_code}, Response: {response.text}")
+        print(f"Failed to request SUI. Status code: {response.status_code}, Response: {response.text}")
 
 def main():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     config = load_config()
 
     try:
@@ -66,7 +64,7 @@ def main():
                 time.sleep(1)
             print("")
     except KeyboardInterrupt:
-        logging.info("\nProcess interrupted by user. Exiting gracefully.")
+        print("\nProcess interrupted by user. Exiting gracefully.")
         sys.exit(0)
 
 if __name__ == "__main__":
