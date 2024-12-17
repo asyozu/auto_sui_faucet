@@ -32,7 +32,7 @@ def request_sui(config):
     try:
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         if not response.ok:
-            print(f"Error: Request failed with status code {response.status_code}. Response: {response.text}")
+            print(f"Error: Request failed with status code {response.status_code}")
         return response
     except requests.exceptions.RequestException as e:
         print(f"Error: Network or request error occurred. Details: {e}")
