@@ -32,7 +32,7 @@ def request_sui(config):
     try:
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         if not response.ok:
-            print(f"Error: Request failed with status code {response.status_code}. Response: {response.text}")
+            print(f"Error: Request failed with status code {response.status_code}")
         return response
     except requests.exceptions.RequestException as e:
         print(f"Error: Network or request error occurred. Details: {e}")
@@ -65,7 +65,7 @@ def main():
 
             sleep_time = int(config['sleep_time'])
             for remaining in range(sleep_time, 0, -1):
-                print(f"Next request in {remaining}", end="\r")
+                print(f"\rNext request in {remaining} seconds", end=" ")
                 time.sleep(1)
             print("")
     except KeyboardInterrupt:
