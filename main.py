@@ -65,7 +65,7 @@ def main():
 
             sleep_time = int(config['sleep_time'])
             for remaining in range(sleep_time, 0, -1):
-                print(f"Next request in {remaining}", end="\r")
+                print(f"\rNext request in {remaining} seconds", end=" ")
                 time.sleep(1)
             print("")
     except KeyboardInterrupt:
