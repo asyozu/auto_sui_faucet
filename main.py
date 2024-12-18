@@ -9,7 +9,8 @@ def load_config(filename='config.json'):
             config = json.load(config_file)
             required_keys = ["faucet", "recipient_address", "sleep_time"]
             if not all(key in config for key in required_keys):
-                raise ValueError(f"Missing required keys in config file: {', '.join(required_keys)}")
+                print(f"Error: Missing required keys in config file: {', '.join(required_keys)}")
+                sys.exit(1)
             return config
     except FileNotFoundError:
         print(f"Error: Configuration file '{filename}' not found.")
@@ -18,7 +19,10 @@ def load_config(filename='config.json'):
         print(f"Error: Failed to parse the configuration file '{filename}'. Ensure it's valid JSON. Details: {e}")
         sys.exit(1)
     except ValueError as e:
-        print(f"Error: {e}")
+        print(f"Error: Invalid configuration: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: Unexpected error occurred: {e}")
         sys.exit(1)
 
 def request_sui(config):
@@ -31,11 +35,13 @@ def request_sui(config):
     }
     try:
         response = requests.post(url, headers=headers, data=json.dumps(payload))
-        if not response.ok:
-            print(f"Error: Request failed with status code {response.status_code}")
+        response.raise_for_status()
         return response
+    except requests.exceptions.HTTPError as e:
+        print(f"Error: HTTP error occurred: {e}")
+        return None
     except requests.exceptions.RequestException as e:
-        print(f"Error: Network or request error occurred. Details: {e}")
+        print(f"Error: Network or request error occurred: {e}")
         return None
 
 def process_response(response):
@@ -49,11 +55,14 @@ def process_response(response):
         try:
             response_json = response.json()
             task_id = response_json.get('task')
-            print(f"SUI request successful! Task ID: {task_id}")
+            if task_id:
+                print(f"SUI request successful! Task ID: {task_id}")
+            else:
+                print("Error: Task ID not found in the response.")
         except json.JSONDecodeError as e:
             print(f"Error: Failed to parse JSON response. Details: {e}")
     else:
-        print(f"Error: Request failed. Status code: {response.status_code}, Response: {response.text}")
+        print(f"Error: {response.status_code} The server encountered a temporary error and could not complete your request.")
 
 def main():
     config = load_config()
