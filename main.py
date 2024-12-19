@@ -45,10 +45,6 @@ def request_sui(config):
         return None
 
 def process_response(response):
-    if response is None:
-        print("Error: No response received.")
-        return
-
     if response.status_code == 429:
         print("Error: Rate limit exceeded. Please try again later.")
     elif response.status_code == 202:
@@ -66,7 +62,6 @@ def process_response(response):
 
 def main():
     config = load_config()
-
     try:
         while True:
             response = request_sui(config)
